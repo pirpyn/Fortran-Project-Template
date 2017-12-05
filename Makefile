@@ -2,12 +2,21 @@
 # locate in $(MOD_DIR) directory, procedures in $(SRC_DIR)
 # and the main program is $(PROGRAM)
 # The .o and .mod are created in $(OBJ_DIR) directory
+SHELL = /bin/bash
+SUFFIXES := .f90
 
+.SUFFIXES: # clear the suffixes
+.SUFFIXES: $(SUFFIXES) .o
 # Basename of main program without extention (assumed .f90)
-PROGRAM:=
+PROGRAM:=main
+# Where the modules are
 MOD_DIR:=modules
-SRC_DIR:=
+# Where other files are
+SRC_DIR:=sources
+# Where to put .o .mod files
 OBJ_DIR:=objects
+# name of the library
+LIB:=lib.a
 
 # Compiler
 FC:=gfortran
@@ -15,24 +24,27 @@ FC:=gfortran
 LDFLAGS:=
 # Compiler options
 # Leave -J$(MOD_DIR) as .mod are put here
-FCFLAGS:=-J$(OBJ_DIR) -g -fbacktrace -Wall -pedantic -O2 -fcheck=all
+FCFLAGS:=-J$(OBJ_DIR) -g -fbacktrace -Wall -pedantic -O2
 
-# Getting the dependencies of the modules
-MOD_WITH_DEPENDS :=$(shell ./make_depends_tree.sh $(MOD_DIR))
-# Getting the .o file name from module source code
-MOD_OBJECTS := $(patsubst $(MOD_DIR)/%,$(OBJ_DIR)/%,	\
-								$(patsubst %.f90,%.o,$(MOD_WITH_DEPENDS)))
+# Getting the .o file name from source code
+MOD_OBJECTS:=	$(patsubst $(MOD_DIR)/%,$(OBJ_DIR)/%,\
+				 					$(patsubst %.f90,%.o,$(shell ./make_depends_tree.sh $(MOD_DIR)))\
+				  		)
 
-# Same for standalone procedure
-OBJECTS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%, \
-						$(patsubst %.f90,%.o,$(wildcard $(SRC_DIR)/*.f90)) )
+# Getting the .o file name from source code
+OBJECTS:=	$(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,\
+				 			$(patsubst %.f90,%.o,$(wildcard $(SRC_DIR)/*.f90))\
+				  )
 
 .PHONY: clean all info depend
+
+VPATH:=$(OBJ_DIR) $(MOD_DIR) $(SRC_DIR)
 
 # Default rule
 # Display info, create $(OBJ_DIR),
 # make dependancies and the main program
-all: info $(OBJ_DIR) depend $(PROGRAM).exe
+
+all: info depend $(PROGRAM).exe
 
 # Display some info
 info:
@@ -42,34 +54,30 @@ info:
 # Rule for the $(OBJ_DIR) directory
 $(OBJ_DIR):
 	@if [ ! -d $(OBJ_DIR) ]; then \
-	echo 'make: Creating $(OBJ_DIR)/'; \
-	mkdir $(OBJ_DIR); fi
+		echo 'make: Creating $(OBJ_DIR)/';\
+		mkdir $(OBJ_DIR) ;	fi
 
-# Compiling the modules with respect their dependancy
-depend: $(MOD_OBJECTS)
-	@echo 'make: Dependancies done'
+# Getting the dependencies of the modules. This produces a file to include
+depend: $(OBJ_DIR) $(MOD_OBJECTS)
+	@echo 'make: Dependancies built'
 
-# Rule for module files
-$(OBJ_DIR)/%.o: $(MOD_DIR)/%.f90
-	@echo 'make: Compiling the module' $<
-	@$(FC) $(FCFLAGS) -o $@ -c $<
-
-# Rule for sttandalone procedure
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
-	@echo 'make: Compiling the procedure' $<
-	@$(FC) $(FCFLAGS) -o $@ -c $<
-
-# Rule for the main program
+# Rule for all file. Look at VPATH variable
 $(OBJ_DIR)/%.o: %.f90
-	@echo 'make: Compiling the main program' $<
+	@echo 'make: Compiling' $<
 	@$(FC) $(LDFLAGS) $(FCFLAGS) -o $@ -c $<
 
-# Génération de l'exécutable
-$(PROGRAM).exe: $(OBJ_DIR)/$(PROGRAM).o $(OBJECTS) $(MOD_OBJECTS)
-	@echo 'make: Linking objects'
-	@$(FC) $(FCFLAGS) -o $@ $^
+$(OBJ_DIR)/$(LIB): $(MOD_OBJECTS) $(OBJECTS)
+	@echo 'make: Creating the library $@'
+	@ar cur $@ $^
+	@echo 'make: Library $@ successfuly created'
+
+# Creating the .exe
+$(PROGRAM).exe: $(OBJ_DIR)/$(PROGRAM).o $(OBJ_DIR)/$(LIB)
+	@echo 'make: Stacticly linking objects'
+	@$(FC) $(LDFLAGS) $(FCFLAGS) -o $@ $^
 	@echo 'make: Program '$@' successfuly created.'
 
 clean:
 	@echo 'make: rm -rf $(PROGRAM).exe $(OBJ_DIR)'
 	@rm -rf $(PROGRAM).exe $(OBJ_DIR)
+
