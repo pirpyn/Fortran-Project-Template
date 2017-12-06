@@ -24,7 +24,7 @@ FC:=gfortran
 LDFLAGS:=
 # Compiler options
 # Leave -J$(MOD_DIR) as .mod are put here
-FCFLAGS:=-J$(OBJ_DIR) -g -fbacktrace -Wall -pedantic -O2
+FCFLAGS:=-J$(OBJ_DIR) -g -fbacktrace -Wall -pedantic -O2 -fdefault-real-8
 
 # Getting the .o file name from source code
 MOD_OBJECTS:=	$(patsubst $(MOD_DIR)/%,$(OBJ_DIR)/%,\
