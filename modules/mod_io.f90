@@ -20,21 +20,73 @@ module mod_io
   ! L'important étant qu'il y ait le même nombre de termes
   ! dans le fichier à lire
   implicit none
-  ! on ne donne pas accès aux routines de l'interface
-  private :: iogvr4,iogvr8,iogvra4,iogvra8
-  private :: iogvi4,iogvi8,iogvia4,iogvia8
-  private :: errmsg
-  
+  private
+  character(len=1) :: sep = '=' ! separateur. Doit etre de taille 1
+ 
   ! cette interface permet de retourner la valeur independament du type 
   interface read_val ! read_val(fid,var_name,value)
-   module procedure iogvr4,iogvr8,iogvra4,iogvra8,iogvi4,iogvi8,iogvia4,iogvia8
+    module procedure iogvr4,iogvr8,iogvra4,iogvra8
+    module procedure iogvi4,iogvi8,iogvia4,iogvia8
+    module procedure iogvc4,iogvc8
+    module procedure iogvc
   end interface
+
+  public :: read_val, read_val_set
 contains
+
+  subroutine read_val_set(parameter_name,value)
+    character(len=*),intent(in) :: parameter_name, value
+    select case(parameter_name)
+    case ('sep','SEP','separator','SEPARATOR')
+      if (1 .ne. len(value)) then
+        print'(a,1x,i0)','Error: read_val_set: length for ''sep'' greater than 1'
+        stop
+      endif
+      sep = value
+    case default
+      print'(a)','Error: printmat_set: Wrong 1st argument '''//parameter_name//''''
+      stop
+    end select
+  end subroutine
+
   subroutine errmsg(fid,var_name)
     integer,intent(in) :: fid
     character(len=*),intent(in) :: var_name
     print'(a,a,a)', 'mod_io:read_val:error: Le text ''',var_name,''' n''a pas été trouvé'
-    print'(4x,a,i0)', 'dans le fichier dont l''unit est',fid
+    print'(4x,a,1x,i0)', 'dans le fichier dont l''unit est',fid
+  end subroutine
+
+  subroutine iogvc(fid,var_name,value) ! pour chercher une chaine de caractère
+    integer,intent(in) :: fid
+    character(len=*),intent(in) :: var_name
+    character(len=*),intent(out) :: value
+    integer :: iostat
+    character(len=len(var_name)) :: mask
+    character(len=1) :: car
+
+    car = ' '
+    iostat = 0
+    mask = ''
+    rewind(fid)
+    do while ((.not.mask.eq.var_name).and.(.not.iostat.eq.-1))
+      read(fid,'(a)',iostat=iostat,advance='no') mask
+    enddo
+    if (iostat.eq.-1) then ! fin de fichier : masque non trouvé
+      call errmsg(fid,var_name)
+      stop
+    else 
+      ! on trouvé le mask 
+      ! on va vérifier que l'on a dans le fichier 'mask = value'
+      do while ( ( ( car.eq.' ' ) .or. ( car.eq.char(9)) ) .and. (.not.iostat.eq.-1) )
+        read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
+      enddo
+      if(.not.car.eq.sep) then
+        call errmsg(fid,var_name//' = <value>')
+        stop
+      else
+        read(fid,*,iostat=iostat) value
+      endif
+    endif
   end subroutine
 
   subroutine iogvra4(fid,var_name,value) ! pour chercher un tableau real
@@ -61,7 +113,7 @@ contains
       do while ( ( ( car.eq.' ' ) .or. ( car.eq.char(9)) ) .and. (.not.iostat.eq.-1) )
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -94,7 +146,7 @@ contains
       do while ( ( (car.eq.' ').or.(car.eq.char(9)) ).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -126,7 +178,7 @@ contains
       do while (((car.eq.' ').or.(car.eq.char(9))).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -158,7 +210,7 @@ contains
       do while ( ( (car.eq.' ') .or. (car.eq.char(9)) ).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -191,7 +243,7 @@ contains
       do while (((car.eq.' ').or.(car.eq.char(9))).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -223,7 +275,7 @@ contains
       do while (((car.eq.' ').or.(car.eq.char(9))).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -256,7 +308,7 @@ contains
       do while (((car.eq.' ').or.(car.eq.char(9))).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
@@ -289,11 +341,77 @@ contains
       do while (((car.eq.' ').or.(car.eq.char(9))).and.(.not.iostat.eq.-1))
         read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
       enddo
-      if(.not.car.eq.'=') then
+      if(.not.car.eq.sep) then
         call errmsg(fid,var_name//' = <value>')
         stop
       else
         read(fid,*,iostat=iostat) value(:)
+      endif
+    endif
+  end subroutine
+
+  subroutine iogvc4(fid,var_name,value) ! pour chercher un tableau real
+    integer,intent(in) :: fid
+    character(len=*),intent(in) :: var_name
+    complex(kind=4), intent(out) :: value
+    integer :: iostat
+    character(len=len(var_name)) :: mask
+    character(len=1) :: car
+
+    car = ' '
+    iostat = 0
+    mask = ''
+    rewind(fid)
+    do while ((.not.mask.eq.var_name).and.(.not.iostat.eq.-1))
+      read(fid,'(a)',iostat=iostat,advance='no') mask
+    enddo
+    if (iostat.eq.-1) then ! fin de fichier : masque non trouvé
+      call errmsg(fid,var_name)
+      stop
+    else 
+      ! on trouvé le mask 
+      ! on va vérifier que l'on a dans le fichier 'mask = value'
+      do while ( ( ( car.eq.' ' ) .or. ( car.eq.char(9)) ) .and. (.not.iostat.eq.-1) )
+        read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
+      enddo
+      if(.not.car.eq.sep) then
+        call errmsg(fid,var_name//' = <value>')
+        stop
+      else
+        read(fid,*,iostat=iostat) value
+      endif
+    endif
+  end subroutine
+
+  subroutine iogvc8(fid,var_name,value) ! pour chercher un tableau real
+    integer,intent(in) :: fid
+    character(len=*),intent(in) :: var_name
+    complex(kind=8), intent(out) :: value
+    integer :: iostat
+    character(len=len(var_name)) :: mask
+    character(len=1) :: car
+
+    car = ' '
+    iostat = 0
+    mask = ''
+    rewind(fid)
+    do while ((.not.mask.eq.var_name).and.(.not.iostat.eq.-1))
+      read(fid,'(a)',iostat=iostat,advance='no') mask
+    enddo
+    if (iostat.eq.-1) then ! fin de fichier : masque non trouvé
+      call errmsg(fid,var_name)
+      stop
+    else 
+      ! on trouvé le mask 
+      ! on va vérifier que l'on a dans le fichier 'mask = value'
+      do while ( ( ( car.eq.' ' ) .or. ( car.eq.char(9)) ) .and. (.not.iostat.eq.-1) )
+        read(fid,'(a)',iostat=iostat,advance='no') car ! on lit le '='
+      enddo
+      if(.not.car.eq.sep) then
+        call errmsg(fid,var_name//' = <value>')
+        stop
+      else
+        read(fid,*,iostat=iostat) value
       endif
     endif
   end subroutine

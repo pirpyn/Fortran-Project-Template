@@ -1,0 +1,13 @@
+x = 3.14
+i = -2
+j =32 // no space between value and =
+string = "Hello World"
+z : (1,2) // separator can be custumized
+
+
+
+y=1e-9 // no space is ok
+string2       =             "Lots of blanks" // is ok also
+string3 = " On several
+lines" // newline are not taken in account, so several and lines will be glued
+

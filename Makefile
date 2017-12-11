@@ -2,13 +2,13 @@
 # locate in $(MOD_DIR) directory, procedures in $(SRC_DIR)
 # and the main program is $(PROGRAM)
 # The .o and .mod are created in $(OBJ_DIR) directory
-SHELL = /bin/bash
-SUFFIXES := .f90
+SHELL:=/bin/bash
+SUFFIXES:=.f90
 
 .SUFFIXES: # clear the suffixes
 .SUFFIXES: $(SUFFIXES) .o
 # Basename of main program without extention (assumed .f90)
-PROGRAM:=main
+PROGRAM:=
 # Where the modules are
 MOD_DIR:=modules
 # Where other files are
@@ -17,7 +17,6 @@ SRC_DIR:=sources
 OBJ_DIR:=objects
 # name of the library
 LIB:=lib.a
-
 # Compiler
 FC:=gfortran
 # Options for shared library
@@ -80,4 +79,3 @@ $(PROGRAM).exe: $(OBJ_DIR)/$(PROGRAM).o $(OBJ_DIR)/$(LIB)
 clean:
 	@echo 'make: rm -rf $(PROGRAM).exe $(OBJ_DIR)'
 	@rm -rf $(PROGRAM).exe $(OBJ_DIR)
-
