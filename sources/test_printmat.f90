@@ -7,7 +7,7 @@ program test_printmat
   integer(kind=4),dimension(5,5) :: D
 
   A = -1
-  B = 1e-3
+  B = 1e-3_4
   C = 2
   D = 42
 

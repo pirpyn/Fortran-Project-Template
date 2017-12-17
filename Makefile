@@ -8,7 +8,7 @@ SUFFIXES:=.f90
 .SUFFIXES: # clear the suffixes
 .SUFFIXES: $(SUFFIXES) .o
 # Basename of main program without extention (assumed .f90)
-PROGRAM:=
+PROGRAM:=test_printmat
 # Where the modules are
 MOD_DIR:=modules
 # Where other files are
@@ -22,8 +22,8 @@ FC:=gfortran
 # Options for shared library
 LDFLAGS:=
 # Compiler options
-# Leave -J$(MOD_DIR) as .mod are put here
-FCFLAGS:=-J$(OBJ_DIR) -g -fbacktrace -Wall -pedantic -O2 -fdefault-real-8
+# Leave -I,-J$(MOD_DIR) as .mod are put here
+FCFLAGS:=-I$(OBJ_DIR) -J$(OBJ_DIR)
 
 # Getting the .o file name from source code
 MOD_OBJECTS:=	$(patsubst $(MOD_DIR)/%,$(OBJ_DIR)/%,\
