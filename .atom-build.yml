@@ -1,0 +1,27 @@
+# This atoms .yml build file works gives basic compilation options
+# It works with linter - gfortran and parse the error
+
+cmd: "make"
+name: "PROJECT build"
+args:
+  - "-C"
+  - "{PROJECT_PATH}"
+sh: true,
+cwd: "{PROJECT_PATH}/"
+errorMatch:
+  - (?<file>[\/0-9a-zA-Z\._]+):(?<line>\d+).0?(?<col>[1-9]\d*)?:\n.*\n.*\n.*\n(?<message>Error:.+)
+warningMatch:
+  - (?<file>[\/0-9a-zA-Z\._]+):(?<line>\d+).(?<col>[1-9]\d*):\n.*\n.*\n.*\n(?<message>Warning:.+)
+targets:
+  Remake:
+    cmd:  "make"
+    args:
+      - -B
+  Clean:
+    cmd: "make"
+    args:
+      - clean
+      - PROGRAM={FILE_ACTIVE_NAME_BASE}
+  Run:
+    cmd: "make && ${FILE_ACTIVE}"
+    # (any previous options are viable here except `targets` itself)
