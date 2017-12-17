@@ -27,6 +27,7 @@ module mod_printmat
     module procedure printmat_i4,printmat_i8,printmat_i4v,printmat_i8v
     module procedure printmat_r4,printmat_r8,printmat_r4v,printmat_r8v
     module procedure printmat_c4,printmat_c8
+    module procedure printmat_l,printmat_lv
   end interface
 
   public :: printmat, printmat_set
@@ -104,7 +105,7 @@ contains
         shape_loc = 'no'
       case default
         print'(a)', 'printmat: error: wrong shape argument for array of rank 1'
-        print'(i0)', 'error' ! raise an error
+        stop
       end select
     endif
 
@@ -161,7 +162,7 @@ contains
         shape_loc = 'no'
       case default
         print'(a)', 'printmat: error: wrong shape argument for array of rank 1'
-        print'(i0)', 'error' ! raise an error
+        stop
       end select
     endif
 
@@ -217,7 +218,7 @@ contains
         shape_loc = 'no'
       case default
         print'(a)', 'printmat: error: wrong shape argument for array of rank 1'
-        print'(i0)', 'error' ! raise an error
+        stop
       end select
     endif
 
@@ -274,7 +275,7 @@ contains
         shape_loc = 'no'
       case default
         print'(a)', 'printmat: error: wrong shape argument for array of rank 1'
-        print'(i0)', 'error' ! raise an error
+        stop
       end select
     endif
 
@@ -329,4 +330,62 @@ contains
       write(fid_loc,'(a)') end_char(1:lend_char)
     end do
   end subroutine
+
+  subroutine printmat_l(A,fid) ! permet d'afficher une matrice réelle double précision
+    logical,dimension(:,:),intent(in) :: A
+    integer :: i,j,n2,fid_loc
+    integer,optional,intent(in) :: fid
+
+    n2 = size(A,2)
+    if (.not.present(fid)) then
+      fid_loc = 0
+    else
+      fid_loc=fid
+    endif
+
+    do i=1,size(A,1)
+      write(fid_loc,'(a)',advance='no') start_char(1:lstart_char)
+      do j=1,n2 -1 
+        write(fid_loc,'(l1,a)',advance='no') A(i,j),sep(1:lsep)
+      enddo
+      write(fid_loc,'(l1,1x)',advance='no') A(i,n2)
+      write(fid_loc,'(a)') end_char(1:lend_char)
+    end do
+  end subroutine
+
+  subroutine printmat_lv(A,fid,shape) ! permet d'afficher vecteur réel double précision
+    logical,dimension(:),intent(in) :: A
+    integer :: i,fid_loc
+    integer,optional,intent(in) :: fid
+    character(len=*),optional :: shape
+    character(len=3) :: shape_loc
+
+    if (.not.present(fid)) then
+      fid_loc = 0
+    else
+      fid_loc=fid
+    endif
+
+    if (.not.present(shape)) then
+      shape_loc = 'no' ! ligne 
+    else
+      select case(shape) 
+      case ('c') ! colonne : column
+        shape_loc = 'yes' ! ligne
+      case ('r') ! ligne : row
+        shape_loc = 'no'
+      case default
+        print'(a)', 'printmat: error: wrong shape argument for array of rank 1'
+        stop
+      end select
+    endif
+
+      write(fid_loc,'(a)',advance='no') start_char(1:lstart_char)
+      do i=1,size(A) -1 
+        write(fid_loc,'(l1,a)',advance=shape_loc) A(i),sep(1:lsep)
+      enddo
+      write(fid_loc,'(l1)',advance='no') A(size(A))
+      write(fid_loc,'(a)') end_char(1:lend_char)
+  end subroutine
+
 end module
